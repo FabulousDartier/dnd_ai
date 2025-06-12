@@ -1,0 +1,185 @@
+    private boolean processCombatCommand(Player humanPlayerContext, String command, Combatant currentActor,
+            List<NPC> availableEnemyTargetsList) {
+        if (!isInCombat || currentActor.isDefeated())
+            return false;
+
+        String lowerCaseCommand = command.toLowerCase();
+        String[] parts = lowerCaseCommand.split("\\s+");
+        String actionWord = parts[0];
+        boolean turnTaken = false;
+        String charName = currentActor.getName().toLowerCase();
+        String attackType = "melee_generic";
+
+        switch (actionWord) {
+            case "attack": {
+                // For melee attack
+                if (parts.length < 2) {
+                    System.out.println("Attack whom? Specify target number.");
+                    return false;
+                }
+                switch (charName) {
+                    case "Astarion":
+                        attackType = "rapier";
+                        break;
+                    case "laezel", "lae'zel":
+                        attackType = "greatsword";
+                        break;
+                    case "gale":
+                        attackType = "staff";
+                        break;
+                    case "shadowheart":
+                        attackType = "mace";
+                        break;
+                }
+                try {
+                    int targetNumber = Integer.parseInt(parts[1]);
+                    System.out.println(targetNumber + ": targetnum.");
+                    if (targetNumber > 0 && targetNumber <= availableEnemyTargetsList.size()) {
+                        NPC target = availableEnemyTargetsList.get(targetNumber - 1);
+                        if (!target.isDefeated()) {
+                            performPlayerAttack(currentActor, target, attackType);
+                            turnTaken = true;
+                        } else {
+                            System.out.println(target.getName() + " is already defeated.");
+                        }
+                    } else {
+                        System.out.println("Invalid target number");
+                    }
+                } catch (NumberFormatException e) {
+                    System.out.println("Invalid target number. Use a number from the list.");
+                }
+                break;
+            }
+            case "shoot": {
+                // For ranged attack
+                if (parts.length < 2) {
+                    System.out.println("Shoot whom? Specify target number.");
+                    return false;
+                }
+                switch (charName) {
+                    case "Astarion":
+                        attackType = "longbow";
+                        break;
+                    case "laezel":
+                    case "lae'zel":
+                        attackType = "crossbow";
+                        break;
+                    case "gale":
+                        attackType = "crossbow";
+                        break;
+                    case "shadowheart":
+                        attackType = "shortbow";
+                        break;
+                    default:
+                        System.out.println(currentActor.getName() + "cannot 'shoot' with their current state.");
+                        return false;
+                }
+
+                try {
+                    int targetNumber = Integer.parseInt(parts[1]);
+                    System.out.println("target num:" + targetNumber);
+                    if (targetNumber > 0 && targetNumber <= availableEnemyTargetsList.size()) {
+                        NPC target = availableEnemyTargetsList.get(targetNumber - 1);
+                        if (!target.isDefeated()) {
+                            performPlayerAttack(currentActor, target, attackType);
+                            turnTaken = true;
+                        } else {
+                            System.out.println(target.getName() + " is already defeated.");
+                        }
+                    } else {
+                        System.out.println("Invalid target number");
+                    }
+                } catch (NumberFormatException e) {
+                    System.out.println("Invalid target number. Use a number from the list.");
+                }
+                break;
+            }
+
+            case "cast": {
+                // For spells
+                if (parts.length < 3) {
+                    System.out.println("Cast what spell on whom? ");
+                    return false;
+                }
+                String spellName = parts[1].toLowerCase();
+                int targetNumSpell = -1;
+                try {
+                    targetNumSpell = Integer.parseInt(parts[2]);
+                } catch (NumberFormatException e) {
+                    System.out.println("Invalid target number to perform the spell.");
+                    return false;
+                }
+
+                if (spellName.equals("firebolt")) {
+                    if (!currentActor.getName().equalsIgnoreCase("gale")
+                            && !currentActor.getName().equalsIgnoreCase("Astarion")) {
+                        System.out.println(currentActor.getName() + "can't cast Firebolt!");
+                        return false;
+                    }
+                    attackType = "firebolt";
+                } else if (spellName.equals("heal")) {
+                    if (!currentActor.getName().equalsIgnoreCase("shadowheart")) {
+                        System.out.println(currentActor.getName() + "cannot cast healing");
+                        return false;
+                    }
+
+                    List<Combatant> possibleAlliesList = turnOrder.stream()
+                            .filter(c -> c.isPlayerControlled() && !c.isDefeated())
+                            .collect(Collectors.toList());
+
+                    if (targetNumSpell > 0 && targetNumSpell <= possibleAlliesList.size()) {
+                        Combatant healTarget = possibleAlliesList.get(targetNumSpell - 1);
+                        if (currentActor instanceof Player || currentActor instanceof CompanionNPC) {
+                            CombatManager.performHealing((Combatant) currentActor, (Combatant) healTarget);
+                            turnTaken = true;
+                        } else {
+                            System.out.println("Cannot heal for target number " + (targetNumSpell - 1));
+                        }
+                    } else {
+                        System.out.println("Invalid target to heal. Try cast within the target list.");
+                    }
+                    break;
+                } else {
+                    System.out.println("Unknown spell: " + spellName);
+                    return false;
+                }
+
+                if (targetNumSpell > 0 && targetNumSpell <= availableEnemyTargetsList.size()) {
+                    NPC target = availableEnemyTargetsList.get(targetNumSpell - 1);
+                    if (!target.isDefeated()) {
+                        performPlayerAttack(currentActor, target, attackType);
+                        turnTaken = true;
+                    } else {
+                        System.out.println(target.getName() + "is already defeated.");
+                    }
+                } else {
+                    System.out.println("Invalid target number to cast spell.");
+                }
+                break;
+            }
+            case "pass": {
+                System.out.println(currentActor.getName() + " passes their turn.");
+                turnTaken = true;
+                break;
+            }
+            default:
+                System.out.println(
+                        "Unknown combat command. Available command: attack <num>, shoot <num>, cast <firebolt/heal> <num>.");
+                break;
+        }
+        if (turnTaken) {
+            boolean allEnemiesDefeated = currentEnemiesInCombat.stream().allMatch(Combatant::isDefeated);
+            if (allEnemiesDefeated) {
+                endCombat(humanPlayerContext, true);
+            } else {
+                boolean allPlayersSideDefeated = turnOrder.stream().filter(Combatant::isPlayerControlled)
+                        .allMatch(Combatant::isDefeated);
+                if (allPlayersSideDefeated) {
+                    endCombat(humanPlayerContext, false);
+                } else {
+                    advanceTurn();
+                }
+            }
+        }
+        return turnTaken;
+    }
