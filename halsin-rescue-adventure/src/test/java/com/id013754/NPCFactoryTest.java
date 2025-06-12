@@ -205,7 +205,7 @@ class NPCFactoryTest {
         assertEquals(
                 "A large, imposing hobgoblin with a guttural voice and a crown of jagged metal. He brandishes a massive warhammer and surveys his throne room with cruel authority.",
                 drorRagzlin.getDescription());
-        assertEquals("Goblin", drorRagzlin.getRace()); 
+        assertEquals("Goblin", drorRagzlin.getRace()); // Note: Race in factory is "Goblin", not "Hobgoblin"
         assertEquals("Warlord", drorRagzlin.getCharacterClass());
         assertEquals(42, drorRagzlin.getMaxHP());
         assertFalse(drorRagzlin.isPlayerControlled());
@@ -220,7 +220,7 @@ class NPCFactoryTest {
         assertEquals(
                 "A drow commander with striking white hair and an aura of cold, ruthless efficiency. She wears dark, well-maintained armor and carries a wicked-looking mace.",
                 minthara.getDescription());
-        assertEquals("Goblin", minthara.getRace()); 
+        assertEquals("Goblin", minthara.getRace()); // Note: Race in factory is "Goblin", not "Drow"
         assertEquals("Commander (Paladin/Cleric)", minthara.getCharacterClass());
         assertEquals(27, minthara.getMaxHP());
         assertFalse(minthara.isPlayerControlled());

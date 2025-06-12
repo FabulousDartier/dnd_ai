@@ -23,9 +23,9 @@ public class AI_DM_Client {
 
     // config.properties should now be placed in src/main/resources
     private static final String CONFIG_FILE = "config.properties";
-    private static final String API_KEY_PROPERTY = "GEMINI_API_KEY"; 
+    private static final String API_KEY_PROPERTY = "GEMINI_API_KEY"; // Correct property name
 
-    // Use gemini-2.0-flash for fast response
+    // Use gemini-1.5-flash-latest for faster, cheaper model
     private static final String API_MODEL = "gemini-2.0-flash";
     private static final String API_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models/";
 
@@ -94,6 +94,7 @@ public class AI_DM_Client {
      */
     @SuppressWarnings("UseSpecificCatch")
     public String generateContent(String prompt) {
+        // ... (generateContent method remains the same as the previous version) ...
         if (apiKey == null) {
             System.err.println("AI Client Error: API Key is not available.");
             return null;
@@ -151,6 +152,7 @@ public class AI_DM_Client {
      * text.
      */
     private String parseResponse(String responseBody) {
+        // ... (parseResponse method remains the same as the previous version) ...
         try {
             JsonObject jsonResponse = JsonParser.parseString(responseBody).getAsJsonObject();
 
@@ -183,4 +185,4 @@ public class AI_DM_Client {
         }
     }
 
-} 
+} // End of AIDMClient class

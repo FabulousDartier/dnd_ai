@@ -36,6 +36,8 @@ class ItemTest {
 
     @Test
     void constructor_withNullName_shouldStillCreateObject_PendsFurtherDiscussionOnNullHandling() {
+        // Current implementation allows null, though this might be undesirable.
+        // If Item enforced non-null names, this test would change to assertThrows.
         Item item = new Item(null, "Description");
         assertNull(item.getName(), "Name should be null if passed as null.");
     }

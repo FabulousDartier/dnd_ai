@@ -122,8 +122,8 @@ class NPCTest {
 
     @Test
     void getInitiativeBonus_shouldBeDexModifier() {
-        NPC npcDex14 = new NPC("Dexy", "D", mockStartingRoom, "R", "C", 1, 10, 10, 10, 14, 10, 10, 10, 10); // DEX 14 -> Mod +2
-                                                                                                            
+        NPC npcDex14 = new NPC("Dexy", "D", mockStartingRoom, "R", "C", 1, 10, 10, 10, 14, 10, 10, 10, 10); // DEX 14 ->
+                                                                                                            // Mod +2
         assertEquals(2, npcDex14.getInitiativeBonus());
         assertEquals(npcDex14.getAbilityModifier("dex"), npcDex14.getInitiativeBonus());
     }
@@ -245,8 +245,14 @@ class NPCTest {
         assertEquals(3, level5NPC.getProficiencyBonus());
         NPC level8NPC = new NPC("L8", "D", mockStartingRoom, "R", "C", 8, 10, 10, 10, 10, 10, 10, 10, 10);
         assertEquals(3, level8NPC.getProficiencyBonus());
-        NPC level9NPC = new NPC("L9", "D", mockStartingRoom, "R", "C", 9, 10, 10, 10, 10, 10, 10, 10, 10); 
-        assertEquals(2, level9NPC.getProficiencyBonus()); 
+        NPC level9NPC = new NPC("L9", "D", mockStartingRoom, "R", "C", 9, 10, 10, 10, 10, 10, 10, 10, 10); // Defaulting
+                                                                                                           // to 2 as
+                                                                                                           // per
+                                                                                                           // current
+                                                                                                           // logic for
+                                                                                                           // >8
+        assertEquals(2, level9NPC.getProficiencyBonus()); // This might be a point to review in NPC class logic if
+                                                          // higher levels are expected
     }
 
     @Test

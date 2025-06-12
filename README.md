@@ -2,7 +2,7 @@
 # Project 1: Text Adventure Game - "Rescue Halsin from the Goblin Camp"
 
 - **NOTE:**  if you don't know what to do in the game or get stuck then go to [Game Flow / Walkthrough (Main Quest)](#game-flow--walkthrough-main-quest) for some hints or guidance.
-- **NOTE:** in order to run this programme smoothly, you should follow [Requirements Fulfillment](#2-requirements-fulfillment). If you don't have Gemini API, then you can create https://aistudio.google.com/app/apikey for FREE TIER USE. Please contact me (id013754@student.reading.ac.uk) if you have any issue of setting up Gemini API key.
+- **NOTE:** in order to run this programme smoothly, you should follow [Setup and How to Run](#setup-and-how-to-run). If you don't have Gemini API, then you can create https://aistudio.google.com/app/apikey for FREE TIER USE. Please contact me (id013754@student.reading.ac.uk) if you have any issue of setting up Gemini API key.
 
 # Table of Content
 - [Basic Information](#basic-information)
@@ -277,6 +277,7 @@ Valid Google Gemini API Key
 
 # Basic Commands
 **Exploration:**
+- `s`: To get game summary and objective
 - `look` / `l`: Use AI Dungeon Master to produce scene narrative dialogue (AI_DM_Client).
 - `list`: Room contents (standard).
 - Movement: `<exit_phrase>` / `go <phrase>`. (e.g. enter sanctum)

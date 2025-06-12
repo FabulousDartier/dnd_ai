@@ -32,14 +32,19 @@ class RoomTest {
         testItem1 = new Item("Test Key", "A generic key for testing.");
 
         // Create a test NPC. NPC constructor requires a starting room.
+        // For simplicity in RoomTest, we might not fully test NPC placement here
+        // if it overly complicates setup, but it's good to have one.
         // NPC(name, desc, room, race, class, lvl, AC, HP, str, dex, con, int, wis, cha)
         testNPC1 = new NPC("Test Goblin", "A generic goblin.", testRoom,
                 "Goblin", "Warrior", 1, 13, 7,
                 10, 12, 10, 8, 8, 8);
+        // Note: The NPC constructor calls testRoom.addNPC(this). We'll test getNPCs to
+        // verify.
 
         // Create a test Player to act as an Observer
         // Player(name, room, AC, maxHP, prof, str, dex, con, int, wis, cha)
         testPlayerObserver = new Player("ObserverPlayer", testRoom, 10, 10, 2, 10, 10, 10, 10, 10, 10);
+        // Note: The Player constructor calls testRoom.attach(this).
     }
 
     @Test
@@ -47,7 +52,8 @@ class RoomTest {
         assertEquals("Test Chamber", testRoom.getName(), "Room name should be set correctly.");
         assertEquals("A plain chamber for testing.", testRoom.getDescription(),
                 "Room description should be set correctly.");
-        assertNotNull(testRoom.getExitDirections(), "Exits map should be initialized."); // Using getExitsList from user
+        assertNotNull(testRoom.getExitDirections(), "Exits map should be initialized."); // Using getExitsList from
+                                                                                         // user's
         // Game.java
         assertTrue(testRoom.getExitDirections().isEmpty(), "New room should have no exits initially.");
         assertNotNull(testRoom.getItems(), "Items list should be initialized.");
@@ -104,6 +110,7 @@ class RoomTest {
     @Test
     void testAddAndGetNPCs() {
         // testNPC1 was already added to testRoom via its constructor.
+        // Let's create another NPC and add it to a different room, then move it.
         Room anotherRoom = new Room("Another Room", "Another place.");
         NPC npc2 = new NPC("Guard", "A stern guard.", anotherRoom, "Human", "Guard", 2, 16, 15, 14, 12, 12, 11, 11, 10);
 
@@ -209,8 +216,22 @@ class RoomTest {
 
         testRoom.notifyObserver("Event by Player", testPlayerObserver);
 
+        // testPlayerObserver (the originator) should NOT have its lastMessage updated
+        // by this specific notify
+        // This depends on how Player.update handles messages, but the core is Room
+        // shouldn't call its update
+        // For this test, we assume Player.update just prints. We check obs2.
         assertEquals("Event by Player", obs2.lastMessage,
                 "Observer 2 should receive message when originator is different.");
+
+        // To truly test if testPlayerObserver didn't get it, we'd need to inspect its
+        // state
+        // or have its update method set a flag. For simplicity, we rely on obs2 getting
+        // it.
+        // Let's check testPlayerObserver's update (which prints to console)
+        // This test is more about the Room's notify logic.
+        // If Player.update did something like: this.lastInternalMessage = message;
+        // assertNotEquals("Event by Player", testPlayerObserver.lastInternalMessage);
     }
 
     @Test
@@ -228,6 +249,8 @@ class RoomTest {
         String description = testRoom.getSurroundingDetail(testPlayerObserver); // Player looking is testPlayerObserver
 
         assertTrue(description.contains(testNPC1.getName()), "Detailed description should list NPCs.");
+        // It should NOT list testPlayerObserver itself in the "Also here (players):"
+        // part
         assertFalse(description.contains("Also here (players): " + testPlayerObserver.getName()),
                 "Player looking should not be listed as 'also here'.");
 

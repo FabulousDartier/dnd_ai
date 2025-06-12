@@ -112,11 +112,12 @@ class CombatManagerTest {
         when(mockAttacker.getProficiencyBonus()).thenReturn(2);
         when(mockTarget.getAC()).thenReturn(10);
         when(mockAttacker.getAbilityModifier("str")).thenReturn(3); // STR is used
-        when(mockAttacker.getAbilityModifier("dex")).thenReturn(5); // DEX is higher, but should NOT be used for attack roll
+        when(mockAttacker.getAbilityModifier("dex")).thenReturn(5); // DEX is higher, but should NOT be used for attack
+                                                                    // roll
 
         try (MockedStatic<DiceRoller> mockedDiceRoller = mockStatic(DiceRoller.class)) {
-            mockedDiceRoller.when(DiceRoller::rollD20).thenReturn(5); // 5 (roll) + 3 (STR) + 2 (prof) = 10. Should hit AC 10
-                                                                      
+            mockedDiceRoller.when(DiceRoller::rollD20).thenReturn(5); // 5 (roll) + 3 (STR) + 2 (prof) = 10. Should hit
+                                                                      // AC 10.
             boolean result = CombatManager.performAttackRoll(mockAttacker, mockTarget, "scimitar_goblin");
             assertTrue(result, "Scimitar attack roll using STR should hit.");
             verify(mockAttacker, times(1)).getAbilityModifier("str");
@@ -129,11 +130,12 @@ class CombatManagerTest {
         when(mockAttacker.getProficiencyBonus()).thenReturn(2);
         when(mockTarget.getAC()).thenReturn(10);
         when(mockAttacker.getAbilityModifier("str")).thenReturn(3); // STR is used
-        when(mockAttacker.getAbilityModifier("dex")).thenReturn(5); // DEX is higher, but should NOT be used for attack roll
+        when(mockAttacker.getAbilityModifier("dex")).thenReturn(5); // DEX is higher, but should NOT be used for attack
+                                                                    // roll
 
         try (MockedStatic<DiceRoller> mockedDiceRoller = mockStatic(DiceRoller.class)) {
-            mockedDiceRoller.when(DiceRoller::rollD20).thenReturn(5); // 5 (roll) + 3 (STR) + 2 (prof) = 10. Should hit AC 10.
-
+            mockedDiceRoller.when(DiceRoller::rollD20).thenReturn(5); // 5 (roll) + 3 (STR) + 2 (prof) = 10. Should hit
+                                                                      // AC 10.
             boolean result = CombatManager.performAttackRoll(mockAttacker, mockTarget, "melee_generic");
             assertTrue(result, "Melee generic attack roll using STR should hit.");
             verify(mockAttacker, times(1)).getAbilityModifier("str");
