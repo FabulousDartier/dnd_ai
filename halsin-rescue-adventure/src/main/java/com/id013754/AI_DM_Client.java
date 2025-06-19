@@ -20,6 +20,8 @@ import com.google.gson.JsonSyntaxException;
  * to generate narrative content (descriptions, dialogue, etc.).
  */
 public class AI_DM_Client {
+    public static final String ANSI_BLUE = "\u001B[34m";
+    public static final String ANSI_RESET = "\u001B[0m";
 
     // config.properties should now be placed in src/main/resources
     private static final String CONFIG_FILE = "config.properties";
@@ -119,7 +121,7 @@ public class AI_DM_Client {
                     .POST(HttpRequest.BodyPublishers.ofString(requestBody))
                     .build();
 
-            System.out.println("[AI DM] DM is articulating his thought...");
+            System.out.println(ANSI_BLUE + "[AI DM] DM is articulating his thought..." + ANSI_RESET);
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
             int statusCode = response.statusCode();

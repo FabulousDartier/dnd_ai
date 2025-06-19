@@ -18,23 +18,21 @@ import com.id013754.factories.RoomFactory;
  */
 
 public class Game {
-    // --- THIS IS THE MAIN ENTRY POINT TO START GAME ---
-    public static void main(String[] args) {
-        Game gameInstance = Game.getInstance();
-        gameInstance.startGame();
-    }
-
-    // ANSI Color Codes
+    // ANSI Color Codes for decorating output
     public static final String ANSI_RESET = "\u001B[0m";
-    public static final String ANSI_BLACK = "\u001B[30m";
     public static final String ANSI_RED = "\u001B[31m";
     public static final String ANSI_GREEN = "\u001B[32m";
     public static final String ANSI_YELLOW = "\u001B[33m";
     public static final String ANSI_BLUE = "\u001B[34m";
     public static final String ANSI_PURPLE = "\u001B[35m";
     public static final String ANSI_CYAN = "\u001B[36m";
-    public static final String ANSI_WHITE = "\u001B[37m";
     public static final String ANSI_BOLD = "\u001B[1m";
+
+    // --- THIS IS THE MAIN ENTRY POINT TO START GAME ---
+    public static void main(String[] args) {
+        Game gameInstance = Game.getInstance();
+        gameInstance.startGame();
+    }
 
     // Private static final instance of the Game class itself
     private static final Game instance = new Game();
@@ -57,7 +55,7 @@ public class Game {
     private int currentTurnIndex;
 
     // --- Quest Flags ---
-    private boolean isHalsinFreed; // After clear all goblins and 3 bosses
+    private boolean isHalsinFreed;
     private boolean isGutDefeated;
     private boolean isRagzlinDefeated;
     private boolean isMintharaDefeated;
@@ -88,12 +86,11 @@ public class Game {
         try {
             this.ai_DM_Client = new AI_DM_Client();
         } catch (RuntimeException e) {
-            System.err.println("FATAL: Failed to initizlize AI Client.");
+            System.err.println(ANSI_RED + "FATAL: Failed to initizlize AI Client." + ANSI_RESET);
             this.ai_DM_Client = null;
         }
 
         initializeGameWorld();
-
     }
 
     // Public static method to provide access to single instance Game
@@ -107,7 +104,7 @@ public class Game {
      */
     @SuppressWarnings("unused")
     private void initializeGameWorld() {
-        System.out.println(ANSI_CYAN + "Initializing game world..." + ANSI_RESET);
+        System.out.println(ANSI_CYAN + "Initilizing game world..." + ANSI_RESET);
 
         // --- Room Creation ---
         Room entrance = (Room) roomFactory.createGoblinCampEntrance();
@@ -157,7 +154,7 @@ public class Game {
         shatteredSanctum.addItem(thievesTools);
         courtyard.addItem(smokyPowder);
         ragzlinThrone.addItem(goblinScribblings);
-        System.out.println(ANSI_GREEN + "Items created and placed." + ANSI_RESET);
+        System.out.println(ANSI_CYAN + "Items created and placed in assigned place" + ANSI_RESET);
 
         // --- Exit Setup ---
         // Entrance <-> Courtyard
@@ -181,7 +178,7 @@ public class Game {
         // Connection within Gut's area
         gutAltarRoom.addExit("enter quarter", gutPrivateRoom);
         gutPrivateRoom.addExit("leave quarter", gutAltarRoom);
-        System.out.println(ANSI_GREEN + "Exits configured." + ANSI_RESET);
+        System.out.println(ANSI_CYAN + "Exits configured." + ANSI_RESET);
 
         // --- Player setup ---
         Player startingPlayer = new Player("Astarion", courtyard, 16, 25, 2, 10, 17, 12, 13, 13, 14);
@@ -204,7 +201,7 @@ public class Game {
         companions.add(laezel);
 
         System.out.println(
-                ANSI_GREEN + "Companions created: " + ANSI_RESET + companions.size() + " (Shadowheart, Gale, Lae'zel)");
+                ANSI_CYAN + "Companions created: " + ANSI_RESET + companions.size() + " (Shadowheart, Gale, Lae'zel)");
 
         // --- Set up Halsin cage ---
         NPC tormentorGoblin1 = npcFactory.createTormentingGoblin(worgPens, "Goblin Runt One");
@@ -247,27 +244,34 @@ public class Game {
 
         NPC gribbo = npcFactory.createTormentingGoblin(voloCageArea, "Gribbo");
 
-        System.out.println(ANSI_GREEN + "NPCs placed in the world." + ANSI_RESET);
         System.out.println(ANSI_CYAN + "Game world initialization completed." + ANSI_RESET);
-        System.out.println("You are playing as " + ANSI_BLUE + startingPlayer.getName() + ANSI_RESET);
+        System.out.println("You are playing as " + ANSI_PURPLE + startingPlayer.getName() + ANSI_RESET);
         System.out.println("Current location: " + ANSI_YELLOW + startingPlayer.getCurrentRoom().getName() + ANSI_RESET);
     }
 
+    @SuppressWarnings("ConvertToTryWithResources")
     public void startGame() {
         delay(1000);
-        System.out.println(
-                ANSI_BOLD + ANSI_PURPLE + "\nWELCOME TO THE BALDUR'S GATE 3 TEXT-BASED ADVENTURE!" + ANSI_RESET);
 
         Player currentPlayer = players.get("astarion");
         if (currentPlayer == null) {
-            System.err.println("Error: Starting player 'Astarion' not found! Check initilization again");
+            System.err.println(
+                    ANSI_RED + "Error: Starting player 'Astarion' not found! Check initilization again" + ANSI_RESET);
             return;
         }
 
         // Check if AI Client failed to initilize
         if (this.ai_DM_Client == null) {
-            System.err.println("Warning: AI Dungeon Master is not available (failed to load API key?).");
+            System.err.println(
+                    ANSI_RED + "Warning: AI Dungeon Master is not available (failed to load API key?)." + ANSI_RESET);
         }
+
+        System.out
+                .println(ANSI_BOLD + ANSI_PURPLE + "\nWELCOME TO THE BALDUR'S GATE 3 TEXT BASED DND! \n" + ANSI_RESET);
+        enterToContinue();
+
+        processExplorationCommand(currentPlayer, "s");
+        enterToContinue();
 
         checkForCombatInitiation(currentPlayer, currentPlayer.getCurrentRoom());
         if (!isInCombat) {
@@ -278,10 +282,9 @@ public class Game {
         // Main game loop
         while (!this.gameOver) {
             if (this.isInCombat) {
-
             } else {
-                System.out.println("\nType 'h' for more commands.");
-                System.out.print("> ");
+                System.out.println(ANSI_BLUE + "\nType 'h' for more commands." + ANSI_RESET);
+                System.out.print(ANSI_GREEN + "> " + ANSI_RESET);
                 String input = this.scanner.nextLine().trim();
 
                 if (input.isEmpty()) {
@@ -298,7 +301,8 @@ public class Game {
                     this.processExplorationCommand(currentPlayer, input);
                 } catch (Exception e) {
                     System.err
-                            .println("[ERROR] An expected error occured during processing command: " + e.getMessage());
+                            .println(ANSI_RED + "[ERROR] An expected error occured during processing command: "
+                                    + e.getMessage() + ANSI_RESET);
                 }
 
             }
@@ -323,7 +327,8 @@ public class Game {
                     npc -> npc.getRace().equals("Goblin") && !(npc instanceof CompanionNPC) && !npc.isDefeated())
                     .collect(Collectors.toList());
             if (!hostilesInRoom.isEmpty()) {
-                System.out.println("The goblins in " + room.getName() + "spot you and attack. You prepare to fight!");
+                System.out.println(ANSI_RED + "\nThe goblins in " + ANSI_YELLOW + room.getName() + ANSI_RED
+                        + " spot you and attack. You prepare to fight!" + ANSI_RESET);
             }
         }
 
@@ -348,7 +353,7 @@ public class Game {
                     lowerCaseCommand.equals("enter quarter") && // Assuming "enter quarters" is the key
                     potentialNextRoom.getName().equalsIgnoreCase("Gut's Quarters") &&
                     !isGutsQuartersDoorUnlocked) {
-                System.out.println("The door to Gut's Quarters is firmly locked.");
+                System.out.println(ANSI_YELLOW + "The door to Gut's Quarters is firmly locked." + ANSI_RESET);
                 tryToMove = false;
             }
             if (tryToMove) {
@@ -359,45 +364,57 @@ public class Game {
 
         switch (commandWord) {
             case "s":
-                System.out.println("--- Game Summary ---");
-                System.out.print(
-                        "You are Astarion, a vampire spawn rogue, recently escaped from a mind flayer nautiloid that crashed. "
-                                + "Like your companions - Shadowheart, Gale, and Lae'zel - you have a parasitic mind flayer tadpole in your head, a ticking clock threatening to transform you into a mind flayer."
-                                + "Your urgent goal is to find a cure. Rumours and desperate hope have led your party to learn of a powerful druid named Halsin, who is said to possess knowledge that could help remove these parasites."
-                                + "Your search has brought you to the outskirts of a dangerous Goblin Camp, where you've discovered that Halsin himself has been captured by the goblins and is being held prisoner."
-                                + "Rescuing him is now your immediate priority, as he may be your best chance at survival.\n");
+                System.out.println(ANSI_YELLOW + "--- Game Summary ---" + ANSI_RESET);
+                System.out.println(
+                        "You are " + ANSI_PURPLE + "Astarion" + ANSI_RESET
+                                + ", a vampire spawn rogue, recently escaped from a mind flayer nautiloid that crashed.");
+                System.out.println(
+                        "Like your companions " + ANSI_GREEN + "Shadowheart" + ANSI_RESET + "," + ANSI_GREEN + " Gale"
+                                + ANSI_RESET + ", and" + ANSI_GREEN + " Lae'zel " + ANSI_RESET
+                                + "you have a parasitic mind flayer tadpole in your head, a ticking clock threatening to transform you into a mind flayer.");
+                System.out.println(
+                        "Your urgent goal is to find a cure. Rumours and desperate hope have led your party to learn of a powerful druid named Halsin, who is said to possess knowledge that could help remove these parasites");
+                System.out.println(
+                        "Your search has brought you to the outskirts of a dangerous Goblin Camp, where you've discovered that Halsin himself has been captured by the goblins and is being held prisoner.");
+                System.out.println(
+                        "Rescuing him is now your immediate priority, as he may be your best chance at survival.\n");
                 break;
             case "h":
-                System.out.println("Available commands: ");
-                System.out.println("s: To get game summary and objective.");
-                System.out.println("look or l: Ask AI Dungeon Master to decribe your current location.");
+                System.out.println(ANSI_CYAN + ANSI_BOLD + "Available commands: " + ANSI_RESET);
+                System.out.println(ANSI_GREEN + "look" + ANSI_RESET + " or " + ANSI_GREEN + "l" + ANSI_RESET
+                        + ": Ask AI Dungeon Master to decribe your current location.");
                 System.out
-                        .println("list: Shows a detailed list of room contents and exits (standard description).");
-                System.out.println("<exit_phrase> (e.g., enter sanctum, go west, leave)");
-                System.out.println("inventory or i: Shows items you are carrying.");
-                System.out.println("take <item_name>: Picks up an item from the room.");
-                System.out.println("drop <item_name>: Drops an item from your inventory into the room.");
-                System.out.println(
-                        "talk to <npc_name> or ask <npc_name> or talk <npc_name>: Starts a conversation with an NPC.");
-                System.out.println(
-                        "describe <available_item_name>: show description of the item (AI Offline) or use AI Dungeon Master to describe it (AI Online).");
-                System.out.println("attack: Initiates combat with hostile NPCs.");
+                        .println(ANSI_GREEN + "list" + ANSI_RESET
+                                + ": Shows a detailed list of room contents and exits (standard description).");
                 System.out
-                        .println("help halsin: Specific action to rescue Halsin in a specific room.");
-                System.out.println("use <item> [on <target>] (e.g. use Gut's Sanctum Key)");
-                System.out.println("steal <item_name>: perform sleight of hands check (1D20 + DEX bonus).");
-                System.out.println("quit: Exits the game.");
+                        .println(ANSI_GREEN + "<exit_phrase>" + ANSI_RESET + " (e.g., enter sanctum, go west, leave)");
+                System.out.println(ANSI_GREEN + "inventory" + ANSI_RESET + " or " + ANSI_GREEN + "i" + ANSI_RESET
+                        + ": Shows items you are carrying.");
+                System.out.println(ANSI_GREEN + "take <item_name>" + ANSI_RESET + ": Picks up an item from the room.");
+                System.out.println(ANSI_GREEN + "drop <item_name>" + ANSI_RESET
+                        + ": Drops an item from your inventory into the room.");
+                System.out.println(
+                        ANSI_GREEN + "talk to <npc_name>" + ANSI_RESET + " or " + ANSI_GREEN + "ask <npc_name>"
+                                + ANSI_RESET + " or " + ANSI_GREEN + "talk <npc_name>" + ANSI_RESET
+                                + ": Starts a conversation with an NPC.");
+                System.out.println(
+                        ANSI_GREEN + "describe <available_item_name>" + ANSI_RESET
+                                + ": show description of the item (AI Offline) or use AI Dungeon Master to describe it (AI Online).");
+                System.out.println(ANSI_GREEN + "attack" + ANSI_RESET + ": Initiates combat with hostile NPCs.");
+                System.out
+                        .println(ANSI_GREEN + "help halsin" + ANSI_RESET
+                                + ": Specific action to rescue Halsin in a specific room. No spoiler :)");
+                System.out.println(ANSI_GREEN + "steal <item_name>" + ANSI_RESET
+                        + ": perform sleight of hands check (1D20 + DEX bonus).");
+                System.out.println(ANSI_GREEN + "quit" + ANSI_RESET + ": Exits the game.");
                 break;
             case "list":
                 System.out.println(currentRoom.getSurroundingDetail(player));
                 break;
             case "look":
             case "l":
-                // Give the player the detailed description including items, other players, and
-                // exits;
                 String description;
                 if (ai_DM_Client != null) {
-                    // List of exits
                     List<String> exitsList = new ArrayList<>();
                     for (Map.Entry<String, Room> entry : currentRoom.getExitsList().entrySet()) {
                         String direction = entry.getKey();
@@ -407,17 +424,16 @@ public class Game {
                     }
                     String allExits = String.join(", ", exitsList);
 
-                    // List of items
-                    // @formatter:off
-                        List<String> itemNames = currentRoom.getItems().stream().map(Item::getName).collect(Collectors.toList());
-                        
-                        String itemsString = itemNames.isEmpty() ? "nothing notable" : String.join(", ", itemNames);
-                        // List of Real Player and NPCs
-                        List<String> characterLists = new ArrayList<>();
-                        currentRoom.getPlayers().stream().filter(p -> !p.equals(player)).map(Player::getName).forEach(characterLists::add);
-                        currentRoom.getNPCs().stream().map(NPC::getName).forEach(characterLists::add);
-                        String charactersString = characterLists.isEmpty() ? "no one here" : String.join(", ", characterLists);
-                        // @formatter:on
+                    List<String> itemNames = currentRoom.getItems().stream().map(Item::getName)
+                            .collect(Collectors.toList());
+                    String itemsString = itemNames.isEmpty() ? "nothing notable" : String.join(", ", itemNames);
+
+                    List<String> characterLists = new ArrayList<>();
+                    currentRoom.getPlayers().stream().filter(p -> !p.equals(player)).map(Player::getName)
+                            .forEach(characterLists::add);
+                    currentRoom.getNPCs().stream().map(NPC::getName).forEach(characterLists::add);
+                    String charactersString = characterLists.isEmpty() ? "no one here"
+                            : String.join(", ", characterLists);
 
                     String prompt = "You are the Dungeon Master describing a room for a player in a text-based adventure game. The player "
                             + player.getName() + " is in the "
@@ -428,11 +444,12 @@ public class Game {
                             " Items to list: [" + itemsString + "] " +
                             " Others present: [" + charactersString + "]. " +
                             " Available exits: [" + allExits + "]";
-                    // DEBUG: System.out.println(prompt);
                     description = ai_DM_Client.generateContent(prompt);
                     if (description == null) {
                         System.out.println(
-                                "The AI Dungeon Master seems lost in thought (offline) ... proceed using default description.");
+                                ANSI_BLUE
+                                        + "The AI Dungeon Master seems lost in thought (offline) ... proceed using default description."
+                                        + ANSI_RESET);
                         description = "\n" + currentRoom.getSurroundingDetail(player);
                     } else {
                         description = description.trim();
@@ -450,7 +467,9 @@ public class Game {
                 if (!arguments.isEmpty()) {
                     if (arguments.equalsIgnoreCase("Gut's Sanctum Key")) {
                         System.out.println(
-                                "Goblins are not happy to see you taking Gut's Sanctum Key. Maybe you have to perform your sleight of hands instead (use command 'steal' <item_name).");
+                                ANSI_YELLOW
+                                        + "Goblins are not happy to see you taking Gut's Sanctum Key. Maybe you have to perform your sleight of hands instead (use command 'steal' <item_name)."
+                                        + ANSI_RESET);
                     } else {
                         takeItem(player, arguments);
                     }
@@ -496,7 +515,7 @@ public class Game {
                 break;
             case "attack":
                 if (isInCombat) {
-                    System.out.println("You are already in combat! Use combat commands.");
+                    System.out.println(ANSI_YELLOW + "You are already in combat! Use combat commands." + ANSI_RESET);
                     break;
                 }
                 List<NPC> hostilesToAttack;
@@ -509,7 +528,7 @@ public class Game {
                             "There's no one immediately hostile to attack here with a general command.");
                     break;
                 }
-                System.out.println("You prepare to attack the hostile threats!");
+                System.out.println(ANSI_RED + "You prepare to attack the hostile threats!" + ANSI_RESET);
 
                 if (!hostilesToAttack.isEmpty()) {
                     startCombat(player, hostilesToAttack);
@@ -522,7 +541,9 @@ public class Game {
                     if (currentRoom.getName().equalsIgnoreCase("Worg Pens")) {
                         if (worgPenKey != null && worgPenKey.getName().equalsIgnoreCase("Worg Pen Key")) {
                             System.out.println(
-                                    "You retrieved the Worg Pen Key. You heard a click as you turned the key. You can see the relief from his eye.");
+                                    ANSI_YELLOW
+                                            + "You retrieved the Worg Pen Key. You heard a click as you turned the key. You can see the relief from his eye."
+                                            + ANSI_RESET);
                             if (isHalsinFreed) {
                                 System.out.println(
                                         "Halsin is already free and waiting for you to deal with the goblin leaders.");
@@ -532,7 +553,8 @@ public class Game {
                                     .filter(npc -> npc.getRace().equalsIgnoreCase("goblin") && !npc.isDefeated())
                                     .collect(Collectors.toList());
                             if (!hostilesInRoom.isEmpty()) {
-                                System.out.println("You move to help the caged druid! The goblins turn on you");
+                                System.out.println(ANSI_RED
+                                        + "You move to help the caged druid! The goblins turn on you" + ANSI_RESET);
                                 startCombat(player, hostilesInRoom);
                             } else {
                                 System.out.println(
@@ -540,9 +562,9 @@ public class Game {
                             }
 
                         } else {
-                            System.out.println("Halsin whisperd: \""
+                            System.out.println(ANSI_CYAN + "Halsin whisperd: \""
                                     + "get the key from Gut's Quarter Room without getting caught then come back here to help me out of cage."
-                                    + "\"");
+                                    + "\"" + ANSI_RESET);
                         }
                     } else {
                         System.out.println("There is no one named Halsin in this room to help");
@@ -569,7 +591,8 @@ public class Game {
                 }
                 break;
             default:
-                System.out.println("I don't understand your '" + command + "'. Try 'help' for commands");
+                System.out.println(
+                        "I don't understand your '" + ANSI_RED + command + ANSI_RESET + "'. Try 'help' for commands");
                 break;
         }
 
@@ -577,19 +600,21 @@ public class Game {
 
     public void describeItem(Player player, String itemName) {
         if (player == null || itemName == null || itemName.trim().isEmpty()) {
-            System.out.println("Warning: Invalid player or item name.");
+            System.out.println(ANSI_RED + "Warning: Invalid player or item name." + ANSI_RESET);
             return;
         }
 
         Room currentRoom = player.getCurrentRoom();
         if (currentRoom == null) {
-            System.out.println(player.getName() + " is in invalid room.");
+            System.out.println(ANSI_RED + player.getName() + " is in invalid room." + ANSI_RESET);
             return;
         }
 
         Item itemToDescribe = currentRoom.getItemByName(itemName);
         if (itemToDescribe != null) {
             String itemDescription;
+            System.out.println(
+                    ANSI_BOLD + ANSI_YELLOW + "--- Examining: " + itemToDescribe.getName() + " ---" + ANSI_RESET);
             if (ai_DM_Client != null) {
                 String prompt = String.format(
                         "You are an expert Dungeon Master describing an item for a player in a text-based adventure game. "
@@ -613,26 +638,28 @@ public class Game {
                 } else {
                     // Fallback if AI is offline or return empty
                     System.out.println(
-                            "The AI Dungeon Master ponders, but offers no further insight on the " + itemToDescribe);
-                    itemDescription = itemToDescribe.getName() + ": " + itemToDescribe.getDescription();
+                            ANSI_PURPLE + "The AI Dungeon Master ponders, but offers no further insight on the "
+                                    + ANSI_GREEN + itemToDescribe + ANSI_PURPLE + "." + ANSI_RESET);
+                    itemDescription = ANSI_GREEN + itemToDescribe.getName() + ANSI_RESET + ": "
+                            + itemToDescribe.getDescription();
                 }
             } else {
                 // if AI is offline then default desc
-                itemDescription = itemToDescribe.getName() + ": " + itemToDescribe.getDescription();
+                itemDescription = ANSI_GREEN + itemToDescribe.getName() + ANSI_RESET + ": "
+                        + itemToDescribe.getDescription();
             }
-            System.out.println("\"" + itemDescription + "\"");
+            System.out.println(itemDescription);
         } else {
-            System.out.println("There is no '" + itemName + "' here to describe.");
+            System.out.println("There is no '" + ANSI_YELLOW + itemName + ANSI_RESET + "' here to describe.");
         }
     }
 
     public void stealItem(Player mainPlayer, String itemName) {
         delay(1000);
-        System.out.println("You are attempting to steal the " + itemName + "...");
+        System.out.println("You are attempting to steal the " + ANSI_GREEN + itemName + ANSI_RESET + "...");
         delay(1000);
-        System.out.println("Difficult Class: 15");
-        System.out.print("Press Enter to roll: \n");
-
+        System.out.println(ANSI_YELLOW + "Difficult Class: 15" + ANSI_RESET);
+        System.out.print(ANSI_BLUE + "Press Enter to roll: \n" + ANSI_RESET);
         scanner.nextLine();
 
         int diceRoll = DiceRoller.rollD20(); // This will generate a number from 1 to 20
@@ -641,29 +668,30 @@ public class Game {
         int totalRoll = diceRoll + bonus;
 
         delay(500);
-        System.out.println("You roll: ");
+        System.out.println(ANSI_BOLD + "You roll: " + ANSI_RESET);
         delay(1000);
-        System.out.print("(1D20): " + diceRoll);
+        System.out.print("(1D20): " + ANSI_CYAN + diceRoll + ANSI_RESET);
         delay(1000);
-        System.out.print(" + (DEX bonus): " + bonus);
+        System.out.print(" + (DEX bonus): " + ANSI_CYAN + bonus + ANSI_RESET);
         delay(1000);
-        System.out.print(" = " + totalRoll + "\n");
+        System.out.print(" = " + ANSI_BOLD + ANSI_CYAN + totalRoll + ANSI_RESET + "\n");
 
         if (totalRoll >= 15) {
             takeItem(mainPlayer, itemName);
         } else {
-            System.out.println("The goblin guards caught you stealing. It's time to return the item.\n");
+            System.out.println(ANSI_RED + "The goblin guards caught you stealing. It's time to return the item."
+                    + ANSI_RESET + "\n");
         }
     }
 
     public void startCombat(Player mainPlayer, List<NPC> enemiesInRoom) {
         if (isInCombat) {
-            System.out.println("Already in combat!");
+            System.out.println(ANSI_YELLOW + "Already in combat!" + ANSI_RESET);
             return;
         }
 
         delay(2000);
-        System.out.println("\n--- COMBAT STARTS! ---");
+        System.out.println(ANSI_BOLD + ANSI_RED + "\n--- COMBAT STARTS! ---" + ANSI_RESET);
         delay(1000);
         this.isInCombat = true;
         this.currentEnemiesInCombat.clear();
@@ -690,18 +718,20 @@ public class Game {
         }
 
         Map<Combatant, Integer> initiativeRolls = new HashMap<>();
+        System.out.println(ANSI_CYAN + "\nRolling for Initiative..." + ANSI_RESET);
         for (Combatant c : this.turnOrder) {
             int roll = DiceRoller.rollD4() + c.getInitiativeBonus();
             initiativeRolls.put(c, roll);
         }
 
-        this.turnOrder.sort(Comparator.comparingInt(initiativeRolls::get).reversed()); // Sort descending order of the
-                                                                                       // initiative rolls
+        this.turnOrder.sort(Comparator.comparingInt(initiativeRolls::get).reversed());
 
-        System.out.println("\nTurn Order:");
+        System.out.println(ANSI_BOLD + ANSI_YELLOW + "\nTurn Order:" + ANSI_RESET);
         for (int i = 0; i < this.turnOrder.size(); i++) {
             Combatant c = this.turnOrder.get(i);
-            System.out.println((i + 1) + ". " + c.getName() + " (Initiative: " + initiativeRolls.get(c) + ")");
+            String color = c.isPlayerControlled() ? ANSI_GREEN : ANSI_RED;
+            System.out.println((i + 1) + ". " + color + c.getName() + ANSI_RESET + " (Initiative: " + ANSI_CYAN
+                    + initiativeRolls.get(c) + ANSI_RESET + ")");
 
         }
         this.currentTurnIndex = 0;
@@ -731,14 +761,14 @@ public class Game {
         }
 
         if (currentCombatant.isPlayerControlled()) {
-            // Player or player-controlled companion's turn
             delay(2000);
-            System.out.println("\nAvailable Targets:");
+            System.out.println(ANSI_YELLOW + "\nAvailable Targets:" + ANSI_RESET);
             List<NPC> attackableEnemies = new ArrayList<>();
             int targetNum = 1;
             for (NPC enemy : currentEnemiesInCombat) {
                 if (!enemy.isDefeated()) {
-                    System.out.println(targetNum + ". " + enemy.getName() + " (HP: " + enemy.getCurrentHP() + "/"
+                    System.out.println("  " + targetNum + ". " + ANSI_RED + enemy.getName() + ANSI_RESET + " (HP: "
+                            + enemy.getCurrentHP() + "/"
                             + enemy.getMaxHP() + ")");
                     attackableEnemies.add(enemy);
                     targetNum++;
@@ -750,10 +780,11 @@ public class Game {
                     .collect(Collectors.toList());
 
             delay(1000);
-            System.out.println("Available allies for healing: ");
+            System.out.println(ANSI_YELLOW + "Available allies for healing: " + ANSI_RESET);
             int allyNum = 1;
             for (Combatant ally : possibleAlliesList) {
-                System.out.println(allyNum + ". " + ally.getName() + " (HP: " + ally.getCurrentHP() + "/"
+                System.out.println("  " + allyNum + ". " + ANSI_GREEN + ally.getName() + ANSI_RESET + " (HP: "
+                        + ally.getCurrentHP() + "/"
                         + ally.getMaxHP() + ")");
                 allyNum++;
             }
@@ -765,34 +796,32 @@ public class Game {
                 return;
             }
 
-            System.out.print(currentCombatant.getName() + "'s Actions" + "(" + currentCombatant.getCurrentHP() + "/"
-                    + currentCombatant.getMaxHP() + ")" + ": ");
-            String charName = currentCombatant.getName().toLowerCase();
-            switch (charName) {
-                case "astarion":
-                    System.out.print(
-                            "shoot(Longbow) <num>, cast firebolt <num>, attack(Rapier) <num>, use health potion on <ally_num>, ");
-                    break;
-                case "gale":
-                    System.out.print(
-                            "cast firebolt <num>, shoot (Crossbow) <num> , attack(Staff) <num>, use health potion on <ally_num>, ");
-                    break;
-                case "lae'zel":
-                case "laezel":
-                    System.out.print(
-                            "attack(Greatsword) <num>, shoot(Crossbow) <num>, use health potion on <ally_num>, ");
-                    break;
-                case "shadowheart":
-                    System.out.print(
-                            "cast heal <ally_num>, attack(Mace) <num>, shoot(Shortbow) <num>, use health potion on <ally_num>, ");
-                    break;
-                default:
-                    System.out.print("attack <num>, use health potion on <ally_num>, ");
-                    break;
-            }
-            System.out.print("pass\n");
+            String combatantColor = currentCombatant.isPlayerControlled() ? ANSI_GREEN : ANSI_RED;
+            System.out.print(ANSI_BOLD + combatantColor + currentCombatant.getName() + "'s Turn" + ANSI_RESET + " (HP: "
+                    + currentCombatant.getCurrentHP() + "/"
+                    + currentCombatant.getMaxHP() + "): ");
 
-            System.out.print("[COMBAT COMMAND]: ");
+            String charName = currentCombatant.getName().toLowerCase();
+            // This is the section you highlighted to remove colors from
+            String availableActions = "attack <num>, pass";
+            if (charName.equals("astarion"))
+                availableActions = "attack <num> (Rapier), shoot <num> (Longbow), cast firebolt <num>, use health potion [on <ally_num>], "
+                        + availableActions;
+            else if (charName.equals("gale"))
+                availableActions = "attack <num> (Staff), shoot <num> (Crossbow), cast firebolt <num>, use health potion [on <ally_num>], "
+                        + availableActions;
+            else if (charName.equals("lae'zel") || charName.equals("laezel"))
+                availableActions = "attack <num> (Greatsword), shoot <num> (Crossbow), use health potion [on <ally_num>], "
+                        + availableActions;
+            else if (charName.equals("shadowheart"))
+                availableActions = "attack <num> (Mace), shoot <num> (Shortbow), cast heal <ally_num>, use health potion [on <ally_num>], "
+                        + availableActions;
+            else // For other companions like Halsin
+                availableActions = "attack <num>, use health potion [on <ally_num>], " + availableActions;
+            System.out.println(availableActions);
+            // End of section with removed colors
+
+            System.out.print(ANSI_GREEN + "[COMBAT COMMAND]: " + ANSI_RESET);
             String input = scanner.nextLine().trim();
 
             boolean turnCompleted = processCombatCommand(input, currentCombatant,
@@ -808,20 +837,23 @@ public class Game {
                     if (allPlayerSideDefeated) {
                         endCombat(getPlayer("Astarion"), false);
                     } else if (isInCombat) {
-                        advanceTurn();
+                        // This else if might be redundant since advanceTurn is called below
                     }
                 }
-                advanceTurn();
+                // Removed redundant advanceTurn call from here, it's now at the end.
             } else {
                 if (isInCombat) {
-                    processNextCombatTurn();
+                    processNextCombatTurn(); // Re-prompt same player for a valid command
                 }
             }
+            if (turnCompleted && isInCombat) {
+                advanceTurn();
+            }
+
         } else if (currentCombatant instanceof NPC) {
             executeEnemyTurn((NPC) currentCombatant);
             if (isInCombat) {
                 advanceTurn();
-
             }
         }
     }
@@ -841,7 +873,7 @@ public class Game {
         switch (actionWord) {
             case "attack":
                 if (parts.length < 2) {
-                    System.out.println("Attack whom? Specify target number.");
+                    System.out.println(ANSI_YELLOW + "Attack whom? Specify target number." + ANSI_RESET);
                     return false;
                 }
                 if (currentActor.getName().equalsIgnoreCase("Astarion"))
@@ -860,16 +892,16 @@ public class Game {
                             performPlayerAttack(currentActor, target, attackType);
                             turnTaken = true;
                         } else
-                            System.out.println(target.getName() + " is already defeated.");
+                            System.out.println(ANSI_YELLOW + target.getName() + " is already defeated." + ANSI_RESET);
                     } else
-                        System.out.println("Invalid target number.");
+                        System.out.println(ANSI_YELLOW + "Invalid target number." + ANSI_RESET);
                 } catch (NumberFormatException e) {
-                    System.out.println("Invalid target number. Use a number from the list.");
+                    System.out.println(ANSI_RED + "Invalid target number. Use a number from the list." + ANSI_RESET);
                 }
                 break;
             case "shoot":
                 if (parts.length < 2) {
-                    System.out.println("Shoot whom? Specify target number.");
+                    System.out.println(ANSI_YELLOW + "Shoot whom? Specify target number." + ANSI_RESET);
                     return false;
                 }
                 if (currentActor.getName().equalsIgnoreCase("Astarion"))
@@ -881,7 +913,8 @@ public class Game {
                 else if (currentActor.getName().equals("Shadowheart")) {
                     attackType = "shortbow";
                 } else {
-                    System.out.println(currentActor.getName() + " cannot 'shoot' with their current setup.");
+                    System.out.println(ANSI_YELLOW + currentActor.getName()
+                            + " cannot 'shoot' with their current setup." + ANSI_RESET);
                     return false;
                 }
                 try {
@@ -892,16 +925,17 @@ public class Game {
                             performPlayerAttack(currentActor, target, attackType);
                             turnTaken = true;
                         } else
-                            System.out.println(target.getName() + " is already defeated.");
+                            System.out.println(ANSI_YELLOW + target.getName() + " is already defeated." + ANSI_RESET);
                     } else
-                        System.out.println("Invalid target number.");
+                        System.out.println(ANSI_YELLOW + "Invalid target number." + ANSI_RESET);
                 } catch (NumberFormatException e) {
-                    System.out.println("Invalid target number. Use a number from the list.");
+                    System.out.println(ANSI_RED + "Invalid target number. Use a number from the list." + ANSI_RESET);
                 }
                 break;
             case "cast":
                 if (parts.length < 2) {
-                    System.out.println("Cast what? And on whom? (ex: 'cast firebolt 1', 'cast heal 2')");
+                    System.out.println(ANSI_YELLOW + "Cast what? And on whom? (ex: 'cast firebolt 1', 'cast heal 2')"
+                            + ANSI_RESET);
                     return false;
                 }
                 String spellName = parts[1].toLowerCase();
@@ -909,19 +943,20 @@ public class Game {
 
                 if (spellName.equals("firebolt")) {
                     if (parts.length < 3) {
-                        System.out.println("Cast firebolt on whom? Specify target number.");
+                        System.out.println(ANSI_YELLOW + "Cast firebolt on whom? Specify target number." + ANSI_RESET);
                         return false;
                     }
                     try {
                         targetNumberSpell = Integer.parseInt(parts[2]);
                     } catch (NumberFormatException e) {
-                        System.out.println("Invalid target number for firebolt.");
+                        System.out.println(ANSI_RED + "Invalid target number for firebolt." + ANSI_RESET);
                         return false;
                     }
 
                     if (!currentActor.getName().equalsIgnoreCase("Gale")
                             && !currentActor.getName().equalsIgnoreCase("Astarion")) {
-                        System.out.println(currentActor.getName() + " doesn't know Firebolt!");
+                        System.out
+                                .println(ANSI_YELLOW + currentActor.getName() + " doesn't know Firebolt!" + ANSI_RESET);
                         return false;
                     }
                     attackType = "firebolt";
@@ -931,24 +966,26 @@ public class Game {
                             performPlayerAttack(currentActor, target, attackType);
                             turnTaken = true;
                         } else
-                            System.out.println(target.getName() + " is already defeated.");
+                            System.out.println(ANSI_YELLOW + target.getName() + " is already defeated." + ANSI_RESET);
                     } else
-                        System.out.println("Invalid target number for spell.");
+                        System.out.println(ANSI_YELLOW + "Invalid target number for spell." + ANSI_RESET);
 
                 } else if (spellName.equals("heal")) {
                     if (parts.length < 3) {
-                        System.out.println("Cast heal on whom? Specify target number from turn order (or 'self').");
+                        System.out.println(ANSI_YELLOW
+                                + "Cast heal on whom? Specify target number from turn order (or 'self')." + ANSI_RESET);
                         return false;
                     }
                     if (!currentActor.getName().equalsIgnoreCase("Shadowheart")) {
-                        System.out.println(currentActor.getName() + " cannot cast Heal!");
+                        System.out.println(ANSI_YELLOW + currentActor.getName() + " cannot cast Heal!" + ANSI_RESET);
                         return false;
                     }
 
                     try {
                         targetNumberSpell = Integer.parseInt(parts[2]);
                         if (!currentActor.getName().equalsIgnoreCase("shadowheart")) {
-                            System.out.println(currentActor.getName() + "cannot cast healing");
+                            System.out
+                                    .println(ANSI_YELLOW + currentActor.getName() + "cannot cast healing" + ANSI_RESET);
                             return false;
                         }
 
@@ -966,10 +1003,12 @@ public class Game {
                             }
                         }
                     } catch (NumberFormatException e) {
-                        System.out.println("Invalid target number for heal. Use a number from turn order or 'self'.");
+                        System.out.println(
+                                ANSI_RED + "Invalid target number for heal. Use a number from turn order or 'self'."
+                                        + ANSI_RESET);
                     }
                 } else {
-                    System.out.println("Unknown spell: " + spellName);
+                    System.out.println(ANSI_YELLOW + "Unknown spell: " + spellName + ANSI_RESET);
                     return false;
                 }
                 break;
@@ -979,7 +1018,7 @@ public class Game {
                 break;
             case "use":
                 if (parts.length < 2) {
-                    System.out.println("Use what item?");
+                    System.out.println(ANSI_YELLOW + "Use what item?" + ANSI_RESET);
                     return false;
                 }
                 String itemName = "";
@@ -995,14 +1034,17 @@ public class Game {
                         targetIdentifier = tempArgs;
                     }
                 } else {
-                    System.out.println("You can only 'use health potion' in combat right now.");
+                    System.out.println(
+                            ANSI_YELLOW + "You can only 'use health potion' in combat right now." + ANSI_RESET);
                     return false;
                 }
                 return handleUseItem(currentActor, itemName, targetIdentifier, availableAllyTargetsList);
 
             default:
                 System.out.println(
-                        "Unknown combat command. Available: attack <num>, shoot <num>, cast <spell> <num>, pass");
+                        ANSI_YELLOW
+                                + "Unknown combat command. Available: attack <num>, shoot <num>, cast <spell> <num>, pass"
+                                + ANSI_RESET);
                 turnTaken = false; // Explicitly false for unknown command
                 break;
         }
@@ -1010,32 +1052,41 @@ public class Game {
     }
 
     private void performPlayerAttack(Combatant attacker, NPC target, String attackType) {
+        String actionString = "";
         switch (attackType) {
             case "crossbow":
             case "longbow":
             case "shortbow":
-                System.out.println(attacker.getName() + " shoots at " + target.getName());
+                actionString = " shoots at ";
                 break;
             case "greatsword":
             case "mace":
-                System.out.println(attacker.getName() + " attacks at " + target.getName());
+                actionString = " attacks ";
                 break;
             case "firebolt":
-                System.out.println(attacker.getName() + " cast Firebolt at " + target.getName());
+                actionString = " casts Firebolt at ";
+                break;
+            default:
+                actionString = " attacks ";
                 break;
         }
+
+        System.out.println((attacker.isPlayerControlled() ? ANSI_GREEN : ANSI_RED) + attacker.getName() + ANSI_RESET
+                + actionString + ANSI_RED + target.getName() + ANSI_RESET);
 
         boolean hit = CombatManager.performAttackRoll(attacker, target, attackType);
         delay(2000);
         if (hit) {
-            System.out.println(">>> Hit!");
+            System.out.println(ANSI_BOLD + ANSI_GREEN + ">>> Hit!" + ANSI_RESET);
             int damageRoll = CombatManager.calculateDamageRoll(attacker, target, attackType);
             target.takeDamage(damageRoll);
-            System.out
-                    .println("[COMBAT LOGS]: " + attacker.getName() + " deals " + damageRoll + " on " + target.getName()
-                            + "(" + target.getCurrentHP() + "/" + target.getMaxHP() + ")");
+            System.out.println(ANSI_CYAN + "[COMBAT LOGS]: " + (attacker.isPlayerControlled() ? ANSI_GREEN : ANSI_RED)
+                    + attacker.getName() + ANSI_RESET + ANSI_CYAN + " deals " + ANSI_BOLD + damageRoll + ANSI_RESET
+                    + ANSI_CYAN + " damage to " + ANSI_RED + target.getName()
+                    + ANSI_RESET + ANSI_CYAN + " (" + target.getCurrentHP() + "/" + target.getMaxHP() + ")"
+                    + ANSI_RESET);
         } else {
-            System.out.println(">>> Miss!");
+            System.out.println(ANSI_BOLD + ANSI_RED + ">>> Miss!" + ANSI_RESET);
         }
     }
 
@@ -1054,14 +1105,15 @@ public class Game {
             } else if (enemy.getCharacterClass().equalsIgnoreCase("warrior")) {
                 enemyAttackType = "scimitar_goblin";
             }
-            System.out.println(enemy.getName() + " attacks " + target.getName() + "!");
+            System.out.println(ANSI_RED + enemy.getName() + ANSI_RESET + " attacks " + ANSI_GREEN + target.getName()
+                    + ANSI_RESET + "!");
             boolean hit = CombatManager.performAttackRoll(enemy, target, enemyAttackType);
             if (hit) {
-                System.out.println(">>> Hit!");
+                System.out.println(ANSI_BOLD + ANSI_GREEN + ">>> Hit!" + ANSI_RESET);
                 int damage = CombatManager.calculateDamageRoll(enemy, target, enemyAttackType);
                 target.takeDamage(damage);
             } else {
-                System.out.println(">>> Miss!");
+                System.out.println(ANSI_BOLD + ANSI_RED + ">>> Miss!" + ANSI_RESET);
             }
         }
     }
@@ -1075,22 +1127,23 @@ public class Game {
     }
 
     private void endCombat(Player playerContext, boolean playerVictory) {
-        System.out.println("\n--- COMBAT ENDS! ---");
+        System.out.println(ANSI_BOLD + ANSI_CYAN + "\n--- COMBAT ENDS! ---" + ANSI_RESET);
         if (playerVictory) {
             Room currentRoom = playerContext.getCurrentRoom();
-            System.out.println("Victory! All enemies have been defeated in " + currentRoom + ".");
+            System.out.println(ANSI_BOLD + ANSI_GREEN + "Victory! All enemies have been defeated in " + ANSI_YELLOW
+                    + currentRoom.getName() + ANSI_RESET + ANSI_BOLD + ANSI_GREEN + "." + ANSI_RESET);
             List<NPC> toRemove = new ArrayList<>();
             for (NPC enemy : currentEnemiesInCombat) {
                 if (enemy.isDefeated()) {
                     toRemove.add(enemy);
                     if (enemy.getName().equalsIgnoreCase("Priestess Gut")) {
-                        System.out.println("Priestess Gut has been defeated!.");
+                        System.out.println(ANSI_YELLOW + "Priestess Gut has been defeated!" + ANSI_RESET);
                         isGutDefeated = true;
                     } else if (enemy.getName().equalsIgnoreCase("Dror Ragzlin")) {
-                        System.out.println("Dror Ragzlin has been defeated!.");
+                        System.out.println(ANSI_YELLOW + "Dror Ragzlin has been defeated!" + ANSI_RESET);
                         isRagzlinDefeated = true;
                     } else if (enemy.getName().equals("Minthara")) {
-                        System.out.println("Minthara has been defeated!.");
+                        System.out.println(ANSI_YELLOW + "Minthara has been defeated!" + ANSI_RESET);
                         isMintharaDefeated = true;
                     }
                 }
@@ -1107,11 +1160,14 @@ public class Game {
                     NPC halsinNPC = currentRoom.getNPCByName("Halsin");
                     if (halsinNPC != null) {
                         System.out
-                                .println("\nWith the goblins defeated in this room, Halsin looks weary but grateful.");
+                                .println("\nWith the goblins defeated in this room, " + ANSI_GREEN + "Halsin"
+                                        + ANSI_RESET + " looks weary but grateful.");
                         isHalsinFreed = true;
                         this.isGoblinAggroGlobally = true;
                         System.out.println(
-                                "\n[ALERT] You hear alarm horns and furious shout from the direction of the main camp... The entire goblin camp is now on high alert and hostile!");
+                                ANSI_BOLD + ANSI_RED
+                                        + "\n[ALERT] You hear alarm horns and furious shout from the direction of the main camp... The entire goblin camp is now on high alert and hostile!"
+                                        + ANSI_RESET);
 
                         if (ai_DM_Client != null) {
                             String prompt = "You are the Dungeon Master in the game Baldur's Gate 3. The player "
@@ -1123,24 +1179,29 @@ public class Game {
                                     + "Keep it concise and in character for Halsin.";
                             String halsinDialogue = ai_DM_Client.generateContent(prompt);
                             if (halsinDialogue != null) {
-                                System.out.println("Halsin says: \"" + halsinDialogue.trim() + "\"");
+                                System.out.println(ANSI_GREEN + "Halsin" + ANSI_RESET + " says: \"" + ANSI_CYAN
+                                        + halsinDialogue.trim() + ANSI_RESET + "\"");
                             } else {
                                 System.out.println(
-                                        "Halsin nod thankfully. 'The leaders...Gut, Ragzlin, Minthara... they must be dealt with before they plan an attack on my village'. (AI Dungeon Master lost in thought...)");
+                                        ANSI_GREEN + "Halsin" + ANSI_RESET
+                                                + " nods thankfully. 'The leaders...Gut, Ragzlin, Minthara... they must be dealt with before they plan an attack on my village'. (AI Dungeon Master lost in thought...)");
                             }
                         } else {
                             System.out.println(
-                                    "Halsin nods thankfully. 'The leaders...Gut, Ragzlin, Minthara... they must be dealt with before they plan an attack on my village'. ");
+                                    ANSI_GREEN + "Halsin" + ANSI_RESET
+                                            + " nods thankfully. 'The leaders...Gut, Ragzlin, Minthara... they must be dealt with before they plan an attack on my village'. ");
                         }
                         System.out.println(
-                                "(OBJECTIVE: Defeat the three Goblin leaders: Priestess Gut, Dror Ragzlin, Minthara), clear all goblins in this camp.");
+                                ANSI_YELLOW
+                                        + "(OBJECTIVE: Defeat the three Goblin leaders: Priestess Gut, Dror Ragzlin, Minthara), clear all goblins in this camp."
+                                        + ANSI_RESET);
 
                     }
                 }
             }
 
         } else {
-            System.out.println("Defeat! Your party has fallen.");
+            System.out.println(ANSI_BOLD + ANSI_RED + "Defeat! Your party has fallen." + ANSI_RESET);
             this.gameOver = true;
         }
 
@@ -1174,8 +1235,8 @@ public class Game {
             }
 
             if (potion == null) {
-                System.out.println(itemUser.getName() + " doesn't have a Health Potion.");
-                return false; // Turn not taken if no potion
+                System.out.println(ANSI_YELLOW + itemUser.getName() + " doesn't have a Health Potion." + ANSI_RESET);
+                return false;
             }
 
             Combatant target = itemUser; // Default to self
@@ -1188,18 +1249,19 @@ public class Game {
                         if (targetNum > 0 && targetNum <= availableAllyTargetsList.size()) {
                             target = availableAllyTargetsList.get(targetNum - 1);
                         } else {
-                            System.out.println("Invalid ally target number for potion.");
+                            System.out.println(ANSI_YELLOW + "Invalid ally target number for potion." + ANSI_RESET);
                             return false;
                         }
                     } catch (NumberFormatException e) {
-                        System.out.println("Invalid target for potion. Use 'self' or a number from the ally list.");
+                        System.out.println(ANSI_RED
+                                + "Invalid target for potion. Use 'self' or a number from the ally list." + ANSI_RESET);
                         return false;
                     }
-                } else if (!isInCombat) { // Exploration mode targeting by name
+                } else if (!isInCombat) {
                     Combatant foundTarget = null;
-                    if (itemUser.getName().equalsIgnoreCase(targetIdentifier)) { // Targeting self by name
+                    if (itemUser.getName().equalsIgnoreCase(targetIdentifier)) {
                         foundTarget = itemUser;
-                    } else { // Targeting a companion by name
+                    } else {
                         for (CompanionNPC comp : companions) {
                             if (comp.getName().equalsIgnoreCase(targetIdentifier)
                                     && comp.getCurrentRoom().equals(currentRoom)) {
@@ -1211,23 +1273,27 @@ public class Game {
                     if (foundTarget != null) {
                         target = foundTarget;
                     } else {
-                        System.out.println("Cannot find '" + targetIdentifier + "' nearby to use the potion on.");
+                        System.out.println(ANSI_YELLOW + "Cannot find '" + targetIdentifier
+                                + "' nearby to use the potion on." + ANSI_RESET);
                         return false;
                     }
                 } else {
                     System.out
-                            .println("Invalid target for potion in combat. Use 'self' or a number from the ally list.");
+                            .println(ANSI_YELLOW
+                                    + "Invalid target for potion in combat. Use 'self' or a number from the ally list."
+                                    + ANSI_RESET);
                     return false;
                 }
             }
 
             if (target.isDefeated()) {
-                System.out.println(target.getName() + " is defeated and cannot be healed by a potion.");
-                return false; // Potion not used, turn not taken
+                System.out.println(
+                        ANSI_YELLOW + target.getName() + " is defeated and cannot be healed by a potion." + ANSI_RESET);
+                return false;
             }
             if (target.getCurrentHP() == target.getMaxHP()) {
-                System.out.println(target.getName() + " is already at full health.");
-                return false; // Potion not used, turn not taken
+                System.out.println(ANSI_YELLOW + target.getName() + " is already at full health." + ANSI_RESET);
+                return false;
             }
 
             boolean potionRemoved = false;
@@ -1239,8 +1305,11 @@ public class Game {
 
             if (potionRemoved) {
                 int healing = DiceRoller.rollD10();
-                System.out.println(itemUser.getName() + " uses a Health Potion on "
-                        + (target.equals(itemUser) ? "themselves" : target.getName()) + ".");
+                System.out.println((itemUser.isPlayerControlled() ? ANSI_GREEN : ANSI_BLUE) + itemUser.getName()
+                        + ANSI_RESET + " uses a " + ANSI_GREEN + "Health Potion" + ANSI_RESET + " on "
+                        + (target.equals(itemUser) ? "themselves"
+                                : (target.isPlayerControlled() ? ANSI_GREEN : ANSI_RED) + target.getName() + ANSI_RESET)
+                        + ".");
                 target.receiveHealing(healing);
                 if (itemUser instanceof Player) {
                     currentRoom.notifyObserver(itemUser.getName() + " used a Health Potion on "
@@ -1251,15 +1320,15 @@ public class Game {
                             + availableAllyTargetsList.get(Integer.parseInt(targetIdentifier) - 1).getName()
                             + " for " + healing + "HP.", null);
                 }
-                return true; // Potion used, turn taken
+                return true;
             } else {
-                System.out.println(itemUser.getName()
-                        + " tried to use a Health Potion, but something went wrong (potion not removed).");
+                System.out.println(ANSI_RED + itemUser.getName()
+                        + " tried to use a Health Potion, but something went wrong (potion not removed)." + ANSI_RESET);
                 return false;
             }
         } else if (itemName.equalsIgnoreCase("Gut's Sanctum Key")) {
             if (!currentRoom.getName().equalsIgnoreCase("Bloodied Shrine")) {
-                System.out.println("You can't use the " + itemName + " here.");
+                System.out.println("You can't use the " + ANSI_GREEN + itemName + ANSI_RESET + " here.");
                 return false;
             }
             Item key = null;
@@ -1271,26 +1340,27 @@ public class Game {
 
             if (key != null) {
                 if (isGutsQuartersDoorUnlocked) {
-                    System.out.println("The door to Gut's quarters is already unlocked.");
-                    return false; // Not a turn-ending action
+                    System.out.println(ANSI_YELLOW + "The door to Gut's quarters is already unlocked." + ANSI_RESET);
+                    return false;
                 }
                 isGutsQuartersDoorUnlocked = true;
 
-                // Consume the key
                 if (itemUser instanceof Player)
                     ((Player) itemUser).removeItem(key);
 
-                System.out.println("You use the " + itemName
-                        + ". You hear a click from the door leading to Gut's private quarters. It seems to be unlocked now.");
+                System.out.println("You use the " + ANSI_GREEN + itemName + ANSI_RESET
+                        + ". You hear a " + ANSI_CYAN + "*click*" + ANSI_RESET
+                        + " from the door leading to Gut's private quarters. It seems to be unlocked now.");
                 currentRoom.notifyObserver(itemUser.getName() + " used " + itemName + " and unlocked a door.",
                         (itemUser instanceof Player ? (Player) itemUser : null));
                 return true;
             } else {
-                System.out.println("You don't have a '" + itemName + "'.");
+                System.out.println("You don't have a '" + ANSI_YELLOW + itemName + ANSI_RESET + "'.");
                 return false;
             }
         } else {
-            System.out.println("You can't use the '" + itemName + "' in this way, or it's not a usable item.");
+            System.out.println("You can't use the '" + ANSI_YELLOW + itemName + ANSI_RESET
+                    + "' in this way, or it's not a usable item.");
             return false;
         }
     }
@@ -1300,27 +1370,33 @@ public class Game {
         NPC targetNPC = currentRoom.getNPCByName(npcName);
 
         if (targetNPC != null) {
-            System.out.println("You approach " + targetNPC.getName() + "...");
+            String npcColor = (targetNPC instanceof CompanionNPC || targetNPC.getName().equalsIgnoreCase("Halsin"))
+                    ? ANSI_GREEN
+                    : ANSI_RED;
+            String npcDisplayName = npcColor + targetNPC.getName() + ANSI_RESET;
+            System.out.println("You approach " + npcDisplayName + "...");
 
             if (targetNPC.getName().equalsIgnoreCase("Halsin") && isHalsinFreed
                     && !(isGutDefeated && isRagzlinDefeated && isMintharaDefeated)) {
                 if (ai_DM_Client != null) {
-                    String prompt = "You are an expert Dungeon Master in the video game Baldur's Gate 3. Player "
-                            + player.getName() +
-                            " is talking to " + targetNPC.getName() + " in the room " + player.getCurrentRoom()
-                            + " in Goblin Camp." +
+                    String prompt = "You are the Dungeon Master. Player " + player.getName() +
+                            " is talking to " + targetNPC.getName() + " in the room " + player.getCurrentRoom() +
                             ". Halsin has been freed but the three goblin leaders are not yet defeated. " +
                             "Generate a brief, in-character response from Halsin, likely urging the player to deal with the leaders.";
                     String dialogue = ai_DM_Client.generateContent(prompt);
                     if (dialogue != null) {
-                        System.out.println("Halsin says: \"" + dialogue.trim() + "\"");
+                        System.out.println(
+                                npcDisplayName + " says: \"" + ANSI_CYAN + dialogue.trim() + ANSI_RESET + "\"");
                     } else {
                         System.out.println(
-                                "Halsin looks at you intensly. 'The leader must be stopped. There is no other way.' (AI Dungeon Master is offline...)");
+                                npcDisplayName + " looks at you intensly. '" + ANSI_CYAN
+                                        + "The leader must be stopped. There is no other way.' (AI Dungeon Master is offline...)"
+                                        + ANSI_RESET);
                     }
                 } else {
                     System.out.println(
-                            "Halsin looks at you intensly. 'The leader must be stopped. There is no other way.'");
+                            npcDisplayName + " looks at you intensly. '" + ANSI_CYAN
+                                    + "The leader must be stopped. There is no other way.'" + ANSI_RESET);
 
                 }
                 return;
@@ -1334,12 +1410,12 @@ public class Game {
                         "Generates a brief, in-character opening line or greeting from " + targetNPC.getName();
                 String initialDialogue = ai_DM_Client.generateContent(initialPrompt);
                 if (initialDialogue != null && !initialDialogue.trim().isEmpty()) {
-                    System.out.println(targetNPC.getName() + " says: \"" + initialDialogue.trim() + "\"");
+                    System.out.println(
+                            npcDisplayName + " says: \"" + ANSI_CYAN + initialDialogue.trim() + ANSI_RESET + "\"");
                 } else {
-                    System.out.println(targetNPC.getName() + " looks at you expentantly");
+                    System.out.println(npcDisplayName + " looks at you expentantly");
                 }
 
-                // Dialogue loop
                 String playerDialogueInput;
                 while (true) {
                     delay(1000);
@@ -1347,7 +1423,7 @@ public class Game {
                     playerDialogueInput = this.scanner.nextLine().trim();
 
                     if (playerDialogueInput.equalsIgnoreCase("end talk")) {
-                        System.out.println("You end the conversation with " + targetNPC.getName() + ".");
+                        System.out.println("You end the conversation with " + npcDisplayName + ".");
                         break;
                     }
 
@@ -1361,17 +1437,18 @@ public class Game {
                             ". The main player objective is to rescue Halsin and deal with the goblin leaders.";
                     String npcResponse = ai_DM_Client.generateContent(conversationPrompt);
                     if (npcResponse != null) {
-                        System.out.println(targetNPC.getName() + " says: \"" + npcResponse.trim() + "\"");
+                        System.out.println(
+                                npcDisplayName + " says: \"" + ANSI_CYAN + npcResponse.trim() + ANSI_RESET + "\"");
 
                     } else {
-                        System.out.println(targetNPC.getName()
+                        System.out.println(npcDisplayName
                                 + " considers your words but doesn't reply immediately. (AI error or no response)");
                     }
                 }
             } else {
-                // Fallback if AI is not available.
-                System.out.println(targetNPC.getName()
-                        + " looks at you expetantly but says nothing. (AI DM is offline, please check API)");
+                System.out.println(npcDisplayName
+                        + " looks at you expetantly but says nothing. (" + ANSI_RED
+                        + "AI DM is offline, please check API" + ANSI_RESET + ")");
             }
         } else {
             System.out.println("There is no one here by the name of '" + npcName + "' to talk to");
@@ -1384,27 +1461,28 @@ public class Game {
         delay(1000);
 
         if (newRoom != null) {
-            // Implement Observer later (leave current room message)
-            // print "You leave the room"
-            currentRoom.notifyObserver(player.getName() + " " + direction, null);
+            currentRoom.notifyObserver(ANSI_PURPLE + player.getName() + ANSI_RESET + " " + direction, null);
             player.setCurrentRoom(newRoom);
 
             List<CompanionNPC> companionsToFollow = new ArrayList<>(this.companions);
             for (CompanionNPC companion : companionsToFollow) {
                 if (companion.getCurrentRoom().equals(currentRoom)) {
-                    currentRoom.notifyObserver(companion.getName() + " follows " + player.getName() + ".", null);
+                    currentRoom.notifyObserver(ANSI_GREEN + companion.getName() + ANSI_RESET + " follows " + ANSI_PURPLE
+                            + player.getName() + ANSI_RESET + ".", null);
                     companion.setCurrentRoom(newRoom);
-                    newRoom.notifyObserver(companion.getName() + " arrives with " + player.getName() + ".", null);
+                    newRoom.notifyObserver(
+                            ANSI_GREEN + companion.getName() + ANSI_RESET + " arrives with " + ANSI_PURPLE
+                                    + player.getName() + ANSI_RESET + ".",
+                            null);
                 }
             }
 
-            newRoom.notifyObserver(player.getName() + " has arrived.", player);
-            System.out.println("\nYou have arrived in " + newRoom.getName() + ". \n");
+            newRoom.notifyObserver(ANSI_GREEN + player.getName() + ANSI_RESET + " has arrived.", player);
+            System.out.println("\nYou have arrived in " + ANSI_YELLOW + newRoom.getName() + ANSI_RESET + ". \n");
             delay(500);
 
             String description;
             if (ai_DM_Client != null) {
-                // Ask for a brief initial impression
                 String prompt = "You are the Dungeon Master of the game Baldur's Gate 3. " +
                         "The players have just arrive in the " + newRoom.getName() +
                         " of the Goblin Camp in the game Baldur's Gate 3. Give a brief (1-2 sentence) initial impression of the scene. "
@@ -1419,10 +1497,10 @@ public class Game {
                     description = "\"" + description.trim() + "\"" + "\n";
                 }
             } else {
-                description = "AI Dungeon Master is currently unavailable to describe the scene.\n";
+                description = "\n" + player.getCurrentRoom().getSurroundingDetail(player);
             }
             System.out.println(description);
-            delay(1000);
+            enterToContinue();
             System.out.println(newRoom.getSurroundingDetail(player));
 
             checkForCombatInitiation(player, newRoom);
@@ -1438,17 +1516,19 @@ public class Game {
         if (itemToTake != null) {
             if (currentRoom.removeItem(itemToTake)) {
                 if (player.addItem(itemToTake)) {
-                    System.out.println("You take the " + itemToTake.getName() + ".");
-                    currentRoom.notifyObserver(player.getName() + " took the " + itemName, null);
+                    System.out.println("You take the " + ANSI_CYAN + itemToTake.getName() + ANSI_RESET + ".");
+                    currentRoom.notifyObserver(player.getName() + " took the " + ANSI_CYAN + itemName + ANSI_RESET,
+                            null);
                 } else {
-                    System.out.println("You couldn't pick up the " + itemToTake.getName() + " for some reason.");
+                    System.out.println("You couldn't pick up the " + ANSI_GREEN + itemToTake.getName() + ANSI_RESET
+                            + " for some reason.");
                     currentRoom.addItem(itemToTake);
                 }
             } else {
-                System.out.println("The " + itemName + " seems to have disappeared!");
+                System.out.println("The " + ANSI_GREEN + itemName + ANSI_RESET + " seems to have disappeared!");
             }
         } else {
-            System.out.println("There is no '" + itemName + "' here to take.");
+            System.out.println("There is no '" + ANSI_YELLOW + itemName + ANSI_RESET + "' here to take.");
         }
     }
 
@@ -1459,13 +1539,15 @@ public class Game {
         if (itemToDrop != null) {
             if (player.removeItem(itemToDrop)) {
                 currentRoom.addItem(itemToDrop);
-                System.out.println("You drop the '" + itemToDrop + "'.");
-                currentRoom.notifyObserver(player.getName() + " dropped the " + itemName, null);
+                System.out.println("You drop the '" + ANSI_GREEN + itemToDrop + ANSI_RESET + "'.");
+                currentRoom.notifyObserver(player.getName() + " dropped the " + ANSI_GREEN + itemName + ANSI_RESET,
+                        null);
             } else {
-                System.out.println("You don't seem to have the '" + itemName + "' any more.");
+                System.out
+                        .println("You don't seem to have the '" + ANSI_YELLOW + itemName + ANSI_RESET + "' any more.");
             }
         } else {
-            System.out.println("You don't have a '" + itemName + "' in your inventory.");
+            System.out.println("You don't have a '" + ANSI_YELLOW + itemName + ANSI_RESET + "' in your inventory.");
         }
     }
 
@@ -1479,13 +1561,18 @@ public class Game {
 
     private void checkWinCondition(Player player) {
         if (isHalsinFreed && isGutDefeated && isRagzlinDefeated && isMintharaDefeated) {
-            System.out.println("\n\n********************************************************************");
-            System.out.println("CONGRATULATIONS, " + player.getName() + "!");
-            System.out.println("You have freed Halsin and defeated the three goblin leaders!");
-            System.out.println("The Absolute's immediate threat in this region has been quelled.");
-            System.out.println("Halsin will now be able to help you seek a cure for the tadpole.");
-            System.out.println("You have won the game!");
-            System.out.println("********************************************************************");
+            System.out.println(ANSI_BOLD + ANSI_GREEN
+                    + "\n\n********************************************************************" + ANSI_RESET);
+            System.out.println(ANSI_BOLD + ANSI_GREEN + "CONGRATULATIONS, " + player.getName() + "!" + ANSI_RESET);
+            System.out.println(ANSI_BOLD + ANSI_GREEN + "You have freed Halsin and defeated the three goblin leaders!"
+                    + ANSI_RESET);
+            System.out.println(ANSI_BOLD + ANSI_GREEN
+                    + "The Absolute's immediate threat in this region has been quelled." + ANSI_RESET);
+            System.out.println(ANSI_BOLD + ANSI_GREEN
+                    + "Halsin will now be able to help you seek a cure for the tadpole." + ANSI_RESET);
+            System.out.println(ANSI_BOLD + ANSI_GREEN + "You have won the game!" + ANSI_RESET);
+            System.out.println(ANSI_BOLD + ANSI_GREEN
+                    + "********************************************************************" + ANSI_RESET);
             this.gameOver = true;
         }
     }
@@ -1497,5 +1584,11 @@ public class Game {
             e.printStackTrace();
         }
 
+    }
+
+    private void enterToContinue() {
+        System.out.println(ANSI_BLUE + "Press 'Enter' to continue." + ANSI_RESET);
+        scanner.nextLine();
+        delay(1000);
     }
 }

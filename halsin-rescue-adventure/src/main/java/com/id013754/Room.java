@@ -9,6 +9,17 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public class Room implements Subject {
+    public static final String ANSI_RESET = "\u001B[0m";
+    public static final String ANSI_BLACK = "\u001B[30m";
+    public static final String ANSI_RED = "\u001B[31m";
+    public static final String ANSI_GREEN = "\u001B[32m";
+    public static final String ANSI_YELLOW = "\u001B[33m";
+    public static final String ANSI_BLUE = "\u001B[34m";
+    public static final String ANSI_PURPLE = "\u001B[35m";
+    public static final String ANSI_CYAN = "\u001B[36m";
+    public static final String ANSI_WHITE = "\u001B[37m";
+    public static final String ANSI_BOLD = "\u001B[1m";
+
     private final String name;
     private final String description;
     private final Map<String, Room> exits;
@@ -40,14 +51,14 @@ public class Room implements Subject {
     public String getSurroundingDetail(Player playerLooking) {
         StringBuilder detailedDesc = new StringBuilder();
 
-        detailedDesc.append("--- ").append(this.name).append(" ---\n");
+        detailedDesc.append(ANSI_YELLOW + "--- ").append(this.name).append(" ---\n" + ANSI_RESET);
         detailedDesc.append("Summary: ");
         detailedDesc.append(this.description).append("\n");
 
         // List items in the room;
         if (!items.isEmpty()) {
             String itemNames = items.stream().map(Item::getName).collect(Collectors.joining(", "));
-            detailedDesc.append("You see here: ").append(itemNames).append(".\n");
+            detailedDesc.append("You see here: " + ANSI_CYAN).append(itemNames).append(".\n" + ANSI_RESET);
         } else {
             detailedDesc.append("There are no items of interest here. \n");
         }
@@ -56,7 +67,7 @@ public class Room implements Subject {
         List<String> otherPlayerNames = new ArrayList<>();
         for (Observer obs : observers) {
             if (!obs.equals(playerLooking)) {
-                otherPlayerNames.add(obs.getName());
+
             }
         }
         if (!otherPlayerNames.isEmpty()) {
@@ -69,9 +80,16 @@ public class Room implements Subject {
 
         // List NPCs
         if (!npcs.isEmpty()) {
-            List<String> npcNames = npcs.stream().map(NPC::getName).collect(Collectors.toList());
-            if (!npcNames.isEmpty()) {
-                detailedDesc.append("You also see: ").append(String.join(", ", npcNames)).append(".\n");
+            List<String> enemyNames = npcs.stream().filter(npc -> !npc.isDefeated() && !(npc instanceof CompanionNPC))
+                    .map(NPC::getName).collect(Collectors.toList());
+            List<String> allyNames = npcs.stream().filter(npc -> !npc.isDefeated() && (npc instanceof CompanionNPC))
+                    .map(NPC::getName).collect(Collectors.toList());
+            if (!allyNames.isEmpty()) {
+                detailedDesc.append("You also see: " + ANSI_GREEN).append(String.join(", ", allyNames))
+                        .append(ANSI_RED + ", ");
+            }
+            if (!enemyNames.isEmpty()) {
+                detailedDesc.append(String.join(", ", enemyNames)).append(ANSI_RESET + ".\n");
             }
         }
 
@@ -79,13 +97,14 @@ public class Room implements Subject {
         if (!exits.isEmpty()) {
             List<String> exitDescription = new ArrayList<>();
             for (Map.Entry<String, Room> entry : exits.entrySet()) {
-                String direction = entry.getKey();
+                String direction = ANSI_YELLOW + entry.getKey() + ANSI_RESET;
                 Room destination = entry.getValue();
 
                 // Add a description like "enter (to Goblin Comp couryeard)"
                 exitDescription.add(direction + " (to " + destination.getName() + ")");
             }
-            detailedDesc.append("Exit: [").append(String.join(", ", exitDescription)).append("]");
+            detailedDesc.append("Exit: [").append(String.join(", ", exitDescription))
+                    .append("]");
         } else {
             detailedDesc.append("There are no obvious exists. ");
         }
